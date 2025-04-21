@@ -1,0 +1,10 @@
+[package]
+name = "iroh_gossip_cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.98"
+iroh = "0.34.1"
+rand = "0.8"
+tokio = "1.44.2"
