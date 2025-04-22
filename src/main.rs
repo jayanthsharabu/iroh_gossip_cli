@@ -1,6 +1,7 @@
-use anyhow::Result;
+use anyhow::{Ok, Result};
 
-use iroh::{Endpoint, SecretKey};
+use iroh::{protocol::Router, Endpoint, SecretKey};
+use iroh_gossip::net::Gossip;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -13,5 +14,15 @@ async fn main() -> Result<()> {
     .bind()
     .await?;
     println!("> our node id is {}", endpoint.node_id());
+    
+    let gossip : Gossip = Gossip::builder().spawn(endpoint.clone()).await?;
+
+    let router : Router = Router::builder(endpoint.clone())
+    .accept(iroh_gossip::ALPN, gossip.clone())
+    .spawn()
+    .await?;
+
+    router.shutdown().await?;
+
     Ok(())
 }
