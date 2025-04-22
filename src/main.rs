@@ -9,6 +9,28 @@ use iroh::protocol::Router;
 use iroh::{Endpoint, PublicKey, SecretKey};
 use iroh_gossip::proto::TopicId;
 
+use iroh::NodeId;
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+
+enum Message {
+    AboutMe {from : NodeId, name : String},
+    Message {from : NodeId, message : String},
+}
+
+impl Message {
+    fn from_bytes(bytes : &[u8]) -> Result<Self> {
+        serde_json::from_slice(bytes).map_err(Into::into)
+}
+    pub fn to_vec(&self) -> Result<Vec<u8>> {
+        serde_json::to_vec(self).expect("serde_json::to_vec is infallible")
+    }
+}
+
+
+
 #[tokio::main]
 async fn main() -> Result<()>{
     let secret_key : SecretKey = SecretKey::generate(rand::rngs::OsRng);
@@ -34,7 +56,10 @@ async fn main() -> Result<()>{
 
     tokio::spawn(subscribe_loop(receiver));
 
-    sender.broadcast("sup".into()).await?;
+    //msg
+    let message = Message::AboutMe { from: endpoint.node_id(), name: String::from("Jay")};
+
+    sender.broadcast(message.to_vec().into()).await?;
 
     //shutdown 
     router.shutdown().await?;

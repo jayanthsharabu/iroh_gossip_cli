@@ -1723,10 +1723,13 @@ name = "iroh_gossip_cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "data-encoding",
  "futures-lite",
  "iroh",
  "iroh-gossip",
  "rand 0.8.5",
+ "serde",
+ "serde_json",
  "tokio",
 ]
 
