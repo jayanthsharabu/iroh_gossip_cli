@@ -1,10 +1,16 @@
-use anyhow::{Ok, Result};
 
-use iroh::{protocol::Router, Endpoint, SecretKey};
-use iroh_gossip::net::Gossip;
+
+use anyhow::Result;
+
+use futures_lite::StreamExt;
+
+use iroh_gossip::net::{Event, Gossip, GossipEvent, GossipReceiver, GossipSender};
+use iroh::protocol::Router;
+use iroh::{Endpoint, PublicKey, SecretKey};
+use iroh_gossip::proto::TopicId;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<()>{
     let secret_key : SecretKey = SecretKey::generate(rand::rngs::OsRng);
     println!("secret key: {}", secret_key);
 
@@ -22,7 +28,28 @@ async fn main() -> Result<()> {
     .spawn()
     .await?;
 
+    let id: TopicId = TopicId::from_bytes(rand::random());
+    let peer_ids: Vec<PublicKey> = vec![];
+    let (sender , receiver ) = gossip.subscribe(id, peer_ids)?.split();
+
+    tokio::spawn(subscribe_loop(receiver));
+
+    sender.broadcast("sup".into()).await?;
+
+    //shutdown 
     router.shutdown().await?;
 
     Ok(())
+
+    async fn subscribe_loop(mut receiver : GossipReceiver) -> Result<()>{
+        while let Some(event)  = receiver.try_next().await?  {
+            if let Event::Gossip(gossip_event) = event {
+                match gossip_event {
+                    GossipEvent::Received(message) => println!("got message: {:?}", message),
+                    _ => println!("got event: {:?}", event)
+                }
+            }
+            
+        }
+    }
 }
